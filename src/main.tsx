@@ -26,6 +26,7 @@ import {
   properties,
   summarize,
   updateBill,
+  synchronizeMonths,
   type Bill,
 } from "./domain";
 import "./style.css";
@@ -54,7 +55,7 @@ const monthName = (m: string) =>
   ][Number(m.slice(5)) - 1] +
   " " +
   m.slice(0, 4);
-const icons = [Zap, Droplets, Flame, Wifi, Trash2, Zap, Wifi];
+const icons = [Zap, Droplets, Flame, Wifi, Trash2, Zap, Wifi, House, Droplets];
 const storageKey = "macaniracuni-demo-v1";
 function App() {
   const [warning, setWarning] = useState("");
@@ -63,7 +64,7 @@ function App() {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
         const value = JSON.parse(raw);
-        return validateBills(value);
+        return synchronizeMonths(validateBills(value));
       }
     } catch {}
     return seed();
@@ -143,7 +144,7 @@ function App() {
           </p>
         </div>
       </aside>
-      <main>
+      <main className={route === "month" ? "month-page" : undefined}>
         <header>
           <span className="mobile-brand">MacaniRacuni</span>
           <span className="eyebrow desktop-label">
@@ -380,8 +381,9 @@ function App() {
             <DataSettings
               bills={bills}
               restore={(data) => {
-                localStorage.setItem(storageKey, JSON.stringify(data));
-                setBills(ensureMonth(data, month));
+                const restored = ensureMonth(synchronizeMonths(data), month);
+                localStorage.setItem(storageKey, JSON.stringify(restored));
+                setBills(restored);
               }}
             />
             <article>

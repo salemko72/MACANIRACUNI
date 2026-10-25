@@ -26,7 +26,7 @@ npm run preview
 
 ## Šta radi
 
-- Mjesec: sedam stalnih očekivanih računa, izbor mjeseca, Sarajevo / Nišići filter, sažetak poznatih iznosa.
+- Mjesec: devet stalnih očekivanih računa, izbor mjeseca, Sarajevo / Nišići filter, sažetak poznatih iznosa.
 - Detalj: prijem i plaćanje odvojeno, iznos, rok, datum izdavanja, izvor, napomena i prethodni dug/preplata iz dokumenta.
 - Novi mjesec počinje bez iznosa i bez potvrda prijema ili plaćanja; historija ostaje sačuvana.
 - Statistika: mjesečni poznati zbirovi i poređenje iznosa po dobavljaču. Različit obuhvat nije dokaz promjene cijena.
@@ -56,3 +56,4 @@ Testovi koriste instalirani Microsoft Edge (`channel: msedge`), mobilnu širinu 
 Statistika ima vlastiti izbor mjeseca, filter nekretnine, šestomjesečni pregled i sažetak poznatih plaćenih/preostalih iznosa. Detalj omogućuje korekciju datuma prijema nezavisno od obračunskog mjeseca.
 
 Postavke nude JSON izvoz svih mjeseci i uvoz kopije. Uvoz provjerava format, valutu, statuse, iznose, datume i duplikate, zatim traži potvrdu zamjene. Neispravna datoteka ne mijenja evidenciju. Kopije su lokalne i nisu automatski spremljene na GitHub ili Cloudflare.
+

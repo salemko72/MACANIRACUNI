@@ -1016,3 +1016,220 @@ textarea {
     font-size: 34px;
   }
 }
+
+@media (max-width: 640px) {
+  main.month-page {
+    padding: 14px 14px 86px;
+  }
+  .month-page header {
+    margin-bottom: 16px;
+  }
+  .month-page .mobile-brand {
+    font-size: 15px;
+  }
+  .month-page .title-row .eyebrow,
+  .month-page .title-row .muted,
+  .month-page .list-heading > div > .muted,
+  .month-page .bottom-note,
+  .month-page footer {
+    display: none;
+  }
+  .month-page h1 {
+    font-size: 24px;
+    letter-spacing: -1px;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .month-page h1 br {
+    display: none;
+  }
+  .month-page h1 span {
+    margin-left: 0.25em;
+  }
+  .month-page .month-picker {
+    margin-top: 8px;
+    gap: 5px;
+  }
+  .month-page .month-picker button {
+    height: 30px;
+  }
+  .month-page .month-picker label {
+    padding: 5px 8px;
+  }
+  .month-page .month-picker input {
+    padding: 0;
+    height: 20px;
+    font-size: 11px;
+  }
+  .month-page .overview {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 8px;
+    margin: 12px 0 16px;
+  }
+  .month-page .total-card {
+    border-radius: 15px;
+    padding: 12px;
+  }
+  .month-page .card-top {
+    font-size: 8px;
+  }
+  .month-page .card-top svg {
+    width: 14px;
+    height: 14px;
+  }
+  .month-page .large-money {
+    font-size: 25px;
+    letter-spacing: -1px;
+    margin: 8px 0;
+  }
+  .month-page .total-foot {
+    font-size: 7px;
+  }
+  .month-page .total-foot > span:last-child {
+    display: none;
+  }
+  .month-page .progress-card {
+    border-radius: 15px;
+    padding: 13px 4px;
+    align-items: center;
+  }
+  .month-page .progress-card > div {
+    gap: 6px;
+  }
+  .month-page .metric-icon {
+    display: none;
+  }
+  .month-page .progress-card b {
+    font-size: 21px;
+  }
+  .month-page .progress-card b small {
+    font-size: 10px;
+  }
+  .month-page .progress-card > div > span:last-child {
+    font-size: 8px;
+  }
+  .month-page .list-heading {
+    margin-bottom: 10px;
+  }
+  .month-page .list-heading h2 {
+    font-size: 15px;
+  }
+  .month-page .list-heading h2 span {
+    width: 19px;
+    height: 19px;
+    font-size: 9px;
+  }
+  .month-page .filters {
+    margin-top: 7px;
+    padding: 3px;
+  }
+  .month-page .filters button {
+    padding: 6px 12px;
+    font-size: 10px;
+  }
+  .month-page .bill-list {
+    border-radius: 16px;
+  }
+  .month-page .bill-row {
+    padding: 5px 10px;
+    gap: 2px 6px;
+  }
+  .month-page .provider {
+    gap: 9px;
+    min-width: 0;
+  }
+  .month-page .provider > span:last-child {
+    min-width: 0;
+  }
+  .month-page .provider-icon {
+    width: 27px;
+    height: 27px;
+    border-radius: 9px;
+  }
+  .month-page .provider-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+  .month-page .provider strong {
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .month-page .provider small,
+  .month-page .amount small {
+    margin-top: 2px;
+    font-size: 8px;
+  }
+  .month-page .tiny-demo {
+    font-size: 6px;
+    margin-left: 3px;
+  }
+  .month-page .amount strong {
+    font-size: 11px;
+  }
+  .month-page .status {
+    font-size: 7px;
+    padding: 2px 5px;
+    gap: 3px;
+  }
+  .month-page .status svg {
+    width: 10px;
+    height: 10px;
+  }
+  .month-page .bill-row > .status:nth-child(2) {
+    margin-left: 36px;
+  }
+  .month-page .row-arrow {
+    width: 13px;
+  }
+}
+@media (max-width: 640px) {
+  .month-page header {
+    margin-bottom: 12px;
+  }
+  .month-page .overview {
+    margin-bottom: 10px;
+  }
+  .month-page .total-card {
+    padding: 9px 12px;
+  }
+  .month-page .large-money {
+    margin: 6px 0;
+  }
+  .month-page .bill-row {
+    padding: 3px 10px;
+    min-height: 44px;
+  }
+  .month-page .provider-icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+@media (max-width: 640px) {
+  .month-page .bill-row {
+    height: 47px;
+    padding: 4px 10px;
+    grid-template-rows: 24px 12px;
+    row-gap: 0;
+  }
+  .month-page .provider strong,
+  .month-page .amount strong {
+    line-height: 1.2;
+  }
+  .month-page .provider small,
+  .month-page .amount small {
+    line-height: 1.1;
+  }
+  .month-page .status {
+    height: 12px;
+    line-height: 1;
+    padding: 1px 5px;
+  }
+}
+@media (max-width: 640px) {
+  .month-page .amount {
+    font-size: 11px;
+    line-height: 1;
+  }
+}

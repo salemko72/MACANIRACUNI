@@ -69,6 +69,20 @@ export const templates = [
     category: "net",
     active: true,
   },
+  {
+    id: "s-maintenance",
+    propertyId: "sarajevo",
+    providerName: "Sarajevostan (održavanje zgrade)",
+    category: "maintenance",
+    active: true,
+  },
+  {
+    id: "n-water",
+    propertyId: "nisici",
+    providerName: "Voda",
+    category: "water",
+    active: true,
+  },
 ];
 export function ensureMonth(bills: Bill[], month: string): Bill[] {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))
@@ -88,6 +102,12 @@ export function ensureMonth(bills: Bill[], month: string): Bill[] {
       currency: "BAM" as const,
     }));
   return extra.length ? [...bills, ...extra] : bills;
+}
+export function synchronizeMonths(bills: Bill[]): Bill[] {
+  return [...new Set(bills.map((b) => b.billingMonth))].reduce(
+    (all, month) => ensureMonth(all, month),
+    bills,
+  );
 }
 export function updateBill(bill: Bill, patch: Partial<Bill>): Bill {
   return {
@@ -113,8 +133,18 @@ export function summarize(bills: Bill[]) {
 export function seed(): Bill[] {
   let all: Bill[] = [];
   for (const m of ["2026-08", "2026-09", "2026-10"]) all = ensureMonth(all, m);
-  return all.map((b, i) => {
-    const idx = i % 7;
+  const demoIds = [
+    "s-electric",
+    "s-water",
+    "s-heat",
+    "s-net",
+    "s-waste",
+    "n-electric",
+    "n-net",
+  ];
+  return all.map((b) => {
+    const idx = demoIds.indexOf(b.templateId);
+    if (idx === -1) return b;
     if (b.billingMonth === "2026-10" && idx > 3) return b;
     const amount =
       [72.4, 23.8, 98, 49.9, 12.5, 31.2, 25][idx] +
