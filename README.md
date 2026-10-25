@@ -1,5 +1,7 @@
 # MacaniRacuni — Faza 1
 
+Javna DEMO verzija: [macaniracuni.salemko.workers.dev](https://macaniracuni.salemko.workers.dev/). Postupak objave, provjere i prijenosa lokalnih podataka opisan je u [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Lokalna DEMO PWA za porodičnu evidenciju mjesečnih računa. Svi iznosi, dobavljačke stavke i historija su ilustrativni podaci.
 
 ## Pokretanje
