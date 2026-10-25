@@ -57,3 +57,5 @@ Statistika ima vlastiti izbor mjeseca, filter nekretnine, šestomjesečni pregle
 
 Postavke nude JSON izvoz svih mjeseci i uvoz kopije. Uvoz provjerava format, valutu, statuse, iznose, datume i duplikate, zatim traži potvrdu zamjene. Neispravna datoteka ne mijenja evidenciju. Kopije su lokalne i nisu automatski spremljene na GitHub ili Cloudflare.
 
+
+Pregled pamti izabrani obračunski mjesec i nekretninu u istom pregledniku. U detalju je moguće unijeti i datum plaćanja. Brza dugmad za potvrdu prijema/plaćanja čuvaju sva popunjena polja uz provjeru ispravnosti; ručno uneseni datumi ostaju sačuvani.

@@ -57,6 +57,24 @@ const monthName = (m: string) =>
   m.slice(0, 4);
 const icons = [Zap, Droplets, Flame, Wifi, Trash2, Zap, Wifi, House, Droplets];
 const storageKey = "macaniracuni-demo-v1";
+const preferenceKey = "macaniracuni-view-v1";
+function readView() {
+  try {
+    const value = JSON.parse(localStorage.getItem(preferenceKey) || "null");
+    return {
+      month:
+        typeof value?.month === "string" &&
+        /^\d{4}-(0[1-9]|1[0-2])$/.test(value.month)
+          ? value.month
+          : "2026-10",
+      property: properties.some((p) => p.id === value?.property)
+        ? value.property
+        : "all",
+    };
+  } catch {
+    return { month: "2026-10", property: "all" };
+  }
+}
 function App() {
   const [warning, setWarning] = useState("");
   const [bills, setBills] = useState<Bill[]>(() => {
@@ -69,8 +87,8 @@ function App() {
     } catch {}
     return seed();
   });
-  const [month, setMonth] = useState("2026-10");
-  const [property, setProperty] = useState("all");
+  const [month, setMonth] = useState(() => readView().month);
+  const [property, setProperty] = useState<string>(() => readView().property);
   const [route, setRoute] = useState(location.hash.slice(1) || "month");
   useEffect(() => {
     const fn = () => setRoute(location.hash.slice(1) || "month");
@@ -80,6 +98,15 @@ function App() {
   useEffect(() => {
     setBills((b) => ensureMonth(b, month));
   }, [month]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(preferenceKey, JSON.stringify({ month, property }));
+    } catch {
+      setWarning(
+        "Preglednik ne dopušta čuvanje izabranog mjeseca i nekretnine.",
+      );
+    }
+  }, [month, property]);
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(bills));
@@ -447,16 +474,10 @@ function Detail({
       <div className="detail-status">
         <button
           className={b.receiptStatus === "received" ? "primary" : "secondary"}
-          onClick={() =>
-            change(b.id, {
-              receiptStatus:
-                b.receiptStatus === "received" ? "missing" : "received",
-              receivedAt:
-                b.receiptStatus === "received"
-                  ? undefined
-                  : new Date().toISOString(),
-            })
-          }
+          type="submit"
+          form="bill-details"
+          name="quickAction"
+          value="receipt"
         >
           <FileText size={18} />
           {b.receiptStatus === "received"
@@ -465,15 +486,10 @@ function Detail({
         </button>
         <button
           className={b.paymentStatus === "paid" ? "primary" : "secondary"}
-          onClick={() =>
-            change(b.id, {
-              paymentStatus: b.paymentStatus === "paid" ? "unpaid" : "paid",
-              paidAt:
-                b.paymentStatus === "paid"
-                  ? undefined
-                  : new Date().toISOString(),
-            })
-          }
+          type="submit"
+          form="bill-details"
+          name="quickAction"
+          value="payment"
         >
           <Check size={18} />
           {b.paymentStatus === "paid"
@@ -482,14 +498,16 @@ function Detail({
         </button>
       </div>
       <form
+        id="bill-details"
         onSubmit={(e) => {
           e.preventDefault();
           const f = new FormData(e.currentTarget);
-          change(b.id, {
+          const patch: Partial<Bill> = {
             amount:
               f.get("amount") === "" ? undefined : Number(f.get("amount")),
             dueDate: String(f.get("dueDate")) || undefined,
             receivedAt: String(f.get("receivedAt")) || undefined,
+            paidAt: String(f.get("paidAt")) || undefined,
             issueDate: String(f.get("issueDate")) || undefined,
             previousBalance:
               f.get("balance") === "" ? undefined : Number(f.get("balance")),
@@ -502,7 +520,25 @@ function Detail({
             paymentStatus: String(
               f.get("paymentStatus"),
             ) as Bill["paymentStatus"],
-          });
+          };
+          const button = (e.nativeEvent as SubmitEvent)
+            .submitter as HTMLButtonElement | null;
+          const now = new Date().toISOString();
+          if (button?.value === "receipt") {
+            patch.receiptStatus =
+              b.receiptStatus === "received" ? "missing" : "received";
+            patch.receivedAt =
+              patch.receiptStatus === "received"
+                ? patch.receivedAt || now
+                : undefined;
+          }
+          if (button?.value === "payment") {
+            patch.paymentStatus =
+              b.paymentStatus === "paid" ? "unpaid" : "paid";
+            patch.paidAt =
+              patch.paymentStatus === "paid" ? patch.paidAt || now : undefined;
+          }
+          change(b.id, patch);
           setSaved(true);
         }}
         onChange={() => setSaved(false)}
@@ -534,6 +570,15 @@ function Detail({
           <label>
             Datum izdavanja
             <input name="issueDate" type="date" defaultValue={b.issueDate} />
+          </label>
+          <label>
+            Datum plaćanja
+            <input
+              key={b.paidAt}
+              name="paidAt"
+              type="date"
+              defaultValue={b.paidAt?.slice(0, 10)}
+            />
           </label>
           <label>
             Izvor

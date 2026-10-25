@@ -191,3 +191,74 @@ test("svih devet računa stane iznad navigacije na iPhone ekranu", async ({
     fullPage: true,
   });
 });
+
+test("izbor mjeseca i nekretnine ostaje nakon osvježavanja", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel("Obračunski mjesec").fill("2026-09");
+  await page.getByRole("button", { name: "Nišići", exact: true }).click();
+  await page.reload();
+  await expect(page.getByLabel("Obračunski mjesec")).toHaveValue("2026-09");
+  await expect(
+    page.getByRole("button", { name: "Nišići", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".bill-row")).toHaveCount(3);
+});
+test("brza potvrda prijema čuva upisan iznos, napomenu i datum", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator(".bill-row").filter({ hasText: "Sarajevostan" }).click();
+  await page.getByLabel("Iznos (KM)").fill("27.35");
+  await page.getByLabel("Napomena").fill("Unos tokom potvrde");
+  await page.getByLabel("Datum prijema").fill("2026-10-20");
+  await page
+    .getByRole("button", { name: "Označi kao primljen", exact: true })
+    .click();
+  await page.reload();
+  await expect(page.getByLabel("Iznos (KM)")).toHaveValue("27.35");
+  await expect(page.getByLabel("Napomena")).toHaveValue("Unos tokom potvrde");
+  await expect(page.getByLabel("Datum prijema")).toHaveValue("2026-10-20");
+  await expect(
+    page.getByRole("button", { name: "Označi kao plaćen", exact: true }),
+  ).toBeVisible();
+});
+test("brza potvrda plaćanja čuva unos i datum plaćanja nezavisno od prijema", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator(".bill-row").filter({ hasText: "Sarajevostan" }).click();
+  await page.getByLabel("Iznos (KM)").fill("31.25");
+  await page.getByLabel("Datum plaćanja").fill("2026-10-21");
+  await page
+    .getByRole("button", { name: "Označi kao plaćen", exact: true })
+    .click();
+  await page.reload();
+  await expect(page.getByLabel("Iznos (KM)")).toHaveValue("31.25");
+  await expect(page.getByLabel("Datum plaćanja")).toHaveValue("2026-10-21");
+  await expect(
+    page.getByRole("button", { name: "Označi kao primljen", exact: true }),
+  ).toBeVisible();
+});
+
+test("brza potvrda odbija negativan iznos bez promjene statusa", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator(".bill-row").filter({ hasText: "Sarajevostan" }).click();
+  await page.getByLabel("Iznos (KM)").fill("-1");
+  await page
+    .getByRole("button", { name: "Označi kao plaćen", exact: true })
+    .click();
+  expect(
+    await page
+      .getByLabel("Iznos (KM)")
+      .evaluate((el: HTMLInputElement) => el.validity.rangeUnderflow),
+  ).toBe(true);
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Označi kao plaćen", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Iznos (KM)")).toHaveValue("");
+});
