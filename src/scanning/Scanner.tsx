@@ -11,10 +11,12 @@ import {
   FileText,
   ChevronDown,
   LoaderCircle,
+  Files,
 } from "lucide-react";
 import { properties, templates, type Bill } from "../domain";
 import { findDocumentByHash, type LocalDocument } from "./documents";
 import { recognizeDocument } from "./recognize";
+import { BatchScanner } from "./BatchScanner";
 import "./scanner.css";
 export type { LocalDocument } from "./documents";
 export interface ScanDraft {
@@ -59,6 +61,7 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
   const [saving, setSaving] = useState(false);
   const [localOnly, setLocalOnly] = useState(!navigator.onLine);
   const [engine, setEngine] = useState<"ai" | "local">("ai");
+  const [batchMode, setBatchMode] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const camera = useRef<HTMLInputElement>(null);
   const upload = useRef<HTMLInputElement>(null);
@@ -241,6 +244,18 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
       setSaving(false);
     }
   }
+  if (batchMode)
+    return (
+      <BatchScanner
+        bills={bills}
+        month={month}
+        property={property}
+        localOnly={localOnly}
+        onSave={onSave}
+        onDone={onDone}
+        onBack={() => setBatchMode(false)}
+      />
+    );
   return (
     <section className="scanner" aria-label="Skeniranje računa">
       <header className="scan-header">
@@ -320,6 +335,14 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
                   : "AI čitač računa · Mistral Vision"}
               </strong>
             </p>
+            <button
+              type="button"
+              className="scan-primary"
+              onClick={() => setBatchMode(true)}
+            >
+              <Files size={21} />
+              Skeniraj sve račune
+            </button>
             <button
               type="button"
               className="scan-primary"

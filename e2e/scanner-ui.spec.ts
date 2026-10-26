@@ -20,7 +20,7 @@ async function openScanner(
   await page.route("**/src/scanning/recognize.ts*", (route) =>
     route.fulfill({
       contentType: "application/javascript",
-      body: `export async function recognizeDocument(file, progress, signal) { progress(45,'Čitanje…'); ${options.slow ? "await new Promise(resolve => { window.finishRecognition = resolve; });" : ""} return { text:'Synthetic example', confidence:${options.lowConfidence ? 35 : 95}, ${options.supplierOnly ? "supplierCategory:'maintenance'" : "templateId:'s-maintenance'"}, amount:123.45, billingMonth:'2026-10', dueDate:'2026-11-10', warnings:[] }; }`,
+      body: `export async function getPdfPageCount() { return 1; } export async function recognizeDocument(file, progress, signal) { progress(45,'Čitanje…'); ${options.slow ? "await new Promise(resolve => { window.finishRecognition = resolve; });" : ""} return { text:'Synthetic example', confidence:${options.lowConfidence ? 35 : 95}, ${options.supplierOnly ? "supplierCategory:'maintenance'" : "templateId:'s-maintenance'"}, amount:123.45, billingMonth:'2026-10', dueDate:'2026-11-10', warnings:[] }; }`,
     }),
   );
   await page.route("**/__scanner-test", (route) =>

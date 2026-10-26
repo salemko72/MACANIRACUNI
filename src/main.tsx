@@ -37,7 +37,11 @@ import { Stats } from "./Stats";
 import { useLedger } from "./family/useLedger";
 import { FamilyPanel } from "./family/FamilyPanel";
 import { Scanner } from "./scanning/Scanner";
-import { saveDocument, deleteDocument } from "./scanning/documents";
+import {
+  saveDocument,
+  deleteDocument,
+  getDocument,
+} from "./scanning/documents";
 import { DocumentPreview } from "./scanning/DocumentPreview";
 import { currentBillingMonth } from "./preferences";
 import { paymentAfterScan } from "./scanning/link";
@@ -463,11 +467,14 @@ function App() {
                     b.templateId === draft.templateId &&
                     b.billingMonth === draft.billingMonth,
                 )?.id || draft.billingMonth + "_" + draft.templateId;
+              const previousDocument = await getDocument(document.id);
               await saveDocument(document);
               try {
                 ledger.setBills((all) => ensureMonth(all, draft.billingMonth));
                 ledger.changeBill(targetId, {
-                  ...paymentAfterScan(existing),
+                  ...(existing.isDemo === true
+                    ? paymentAfterScan(existing)
+                    : {}),
                   amount: draft.amount,
                   dueDate: draft.dueDate,
                   issueDate: draft.issueDate,
@@ -481,7 +488,9 @@ function App() {
                 });
                 setMonth(draft.billingMonth);
               } catch (err) {
-                await deleteDocument(document.id).catch(() => {});
+                if (previousDocument)
+                  await saveDocument(previousDocument).catch(() => {});
+                else await deleteDocument(document.id).catch(() => {});
                 throw err;
               }
             }}

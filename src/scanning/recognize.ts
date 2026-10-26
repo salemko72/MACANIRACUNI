@@ -13,6 +13,62 @@ const asset = (path: string) =>
   new URL(`${import.meta.env.BASE_URL}ocr/${path}`, window.location.origin)
     .href;
 
+async function loadPdf(
+  file: File,
+  signal: AbortSignal | undefined,
+  onLoading: (destroy: () => Promise<void>) => void,
+) {
+  const pdfjs = await import("pdfjs-dist");
+  checkAbort(signal);
+  pdfjs.GlobalWorkerOptions.workerSrc = asset("pdf.worker.min.mjs");
+  const data = await file.arrayBuffer();
+  checkAbort(signal);
+  const loading = pdfjs.getDocument({ data, useSystemFonts: true });
+  let destroyed: Promise<void> | undefined;
+  onLoading(() => (destroyed ??= loading.destroy()));
+  const pdf = await loading.promise;
+  checkAbort(signal);
+  return pdf;
+}
+
+/** Counts PDF pages without rendering them; releases the loading task on every path. */
+export async function getPdfPageCount(
+  file: File,
+  signal?: AbortSignal,
+): Promise<number> {
+  checkAbort(signal);
+  if (file.type !== "application/pdf") throw new Error("Odaberite PDF račun.");
+  if (!file.size) throw new Error("Datoteka je prazna. Odaberite drugi račun.");
+  if (file.size > 20 * 1024 * 1024)
+    throw new Error(
+      "Datoteka je prevelika. Najveća dozvoljena veličina je 20 MB.",
+    );
+  let destroyPdf: (() => Promise<void>) | undefined;
+  let rejectAbort: (reason: unknown) => void = () => {};
+  const abortPromise = new Promise<never>((_, reject) => {
+    rejectAbort = reject;
+  });
+  const stop = () => {
+    if (destroyPdf) void destroyPdf().catch(() => {});
+    rejectAbort(aborted());
+  };
+  signal?.addEventListener("abort", stop, { once: true });
+  try {
+    return await Promise.race([
+      loadPdf(file, signal, (destroy) => {
+        destroyPdf = destroy;
+      }).then((pdf) => pdf.numPages),
+      abortPromise,
+    ]);
+  } catch (error) {
+    if (signal?.aborted) throw aborted();
+    throw error;
+  } finally {
+    signal?.removeEventListener("abort", stop);
+    if (destroyPdf) await destroyPdf().catch(() => {});
+  }
+}
+
 async function photoCanvas(file: File): Promise<HTMLCanvasElement> {
   // from-image applies EXIF orientation before dimensions and scaling are calculated.
   const bitmap = await createImageBitmap(file, {
@@ -44,6 +100,7 @@ export async function recognizeDocument(
   onProgress: Progress,
   signal?: AbortSignal,
   mode: "ai" | "local" = "ai",
+  pageNumber?: number,
 ): Promise<ScanSuggestion> {
   checkAbort(signal);
   if (
@@ -142,20 +199,21 @@ export async function recognizeDocument(
     progress(2, "Priprema računa…");
     let result: ScanSuggestion;
     if (file.type === "application/pdf") {
-      const pdfjs = await import("pdfjs-dist");
-      checkAbort(signal);
-      pdfjs.GlobalWorkerOptions.workerSrc = asset("pdf.worker.min.mjs");
-      const loading = pdfjs.getDocument({
-        data: await file.arrayBuffer(),
-        useSystemFonts: true,
+      const pdf = await loadPdf(file, signal, (destroy) => {
+        destroyPdf = destroy;
       });
-      destroyPdf = () => loading.destroy();
+      const selectedPage = pageNumber ?? 1;
+      if (
+        !Number.isInteger(selectedPage) ||
+        selectedPage < 1 ||
+        selectedPage > pdf.numPages
+      )
+        throw new Error(`PDF stranica mora biti između 1 i ${pdf.numPages}.`);
+      const page = await pdf.getPage(selectedPage);
       checkAbort(signal);
-      const pdf = await loading.promise;
-      const page = await pdf.getPage(1);
-      checkAbort(signal);
-      progress(10, "Čitanje teksta prve PDF stranice…");
+      progress(10, `Čitanje teksta PDF stranice ${selectedPage}…`);
       const content = await page.getTextContent();
+      checkAbort(signal);
       let text = "";
       let lastY: number | undefined;
       for (const item of content.items) {
@@ -195,7 +253,7 @@ export async function recognizeDocument(
         checkAbort(signal);
         result = await ocr(canvas);
       }
-      if (pdf.numPages > 1)
+      if (pageNumber === undefined && pdf.numPages > 1)
         result.warnings.unshift(
           `PDF ima ${pdf.numPages} stranica. Obrađena je samo prva stranica; ostale stranice provjerite ručno.`,
         );
