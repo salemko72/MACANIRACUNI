@@ -14,6 +14,9 @@ export type Bill = {
   balanceType?: "debt" | "credit";
   source?: "manual" | "paper" | "email";
   notes?: string;
+  documentId?: string;
+  confidence?: number;
+  isDemo?: boolean;
 };
 export const properties = [
   { id: "sarajevo", name: "Sarajevo" },
@@ -144,8 +147,8 @@ export function seed(): Bill[] {
   ];
   return all.map((b) => {
     const idx = demoIds.indexOf(b.templateId);
-    if (idx === -1) return b;
-    if (b.billingMonth === "2026-10" && idx > 3) return b;
+    if (idx === -1) return { ...b, isDemo: true };
+    if (b.billingMonth === "2026-10" && idx > 3) return { ...b, isDemo: true };
     const amount =
       [72.4, 23.8, 98, 49.9, 12.5, 31.2, 25][idx] +
       (b.billingMonth === "2026-08"
@@ -155,6 +158,7 @@ export function seed(): Bill[] {
           : 0);
     return {
       ...b,
+      isDemo: true,
       amount,
       receiptStatus:
         b.billingMonth === "2026-10" && idx === 2 ? "needs_review" : "received",

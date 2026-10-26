@@ -28,18 +28,23 @@ export function Stats({
   setMonth,
   property,
   setProperty,
+  isFamily = false,
 }: {
   bills: Bill[];
   month: string;
   setMonth: (m: string) => void;
   property: string;
   setProperty: (p: string) => void;
+  isFamily?: boolean;
 }) {
   const filtered = bills.filter(
     (b) =>
       property === "all" ||
       templates.find((t) => t.id === b.templateId)?.propertyId === property,
   );
+  const includesDemo =
+    !isFamily &&
+    filtered.some((b) => b.amount !== undefined && b.isDemo !== false);
   const shift = (n: number) => {
     const d = new Date(month + "-15T12:00:00");
     d.setMonth(d.getMonth() + n);
@@ -62,7 +67,18 @@ export function Stats({
   );
   return (
     <section className="stats">
-      <p className="eyebrow">ŠIRA SLIKA · DEMO</p>
+      <p className="eyebrow">
+        ŠIRA SLIKA ·{" "}
+        {isFamily || bills.some((b) => b.isDemo === false)
+          ? "VAŠI PODACI"
+          : "DEMO"}
+      </p>
+      {includesDemo && (
+        <p className="notice">
+          Pregled uključuje DEMO primjere. DEMO i stvarni iznosi nisu međusobno
+          uporedivi; za zajedničku stvarnu evidenciju otvorite porodični dio.
+        </p>
+      )}
       <div className="title-row">
         <div>
           <h1>Mjesec po mjesec.</h1>
@@ -165,13 +181,17 @@ export function Stats({
           const p = filtered.find(
             (b) => b.templateId === t.id && b.billingMonth === previous.m,
           );
-          const comparable = a?.amount !== undefined && p?.amount !== undefined;
+          const comparable =
+            a?.amount !== undefined &&
+            p?.amount !== undefined &&
+            (a.isDemo === false) === (p.isDemo === false);
           return (
             <div className="supplier-trend" key={t.id}>
               <span>
                 {t.providerName}
                 <small>
-                  {properties.find((p) => p.id === t.propertyId)?.name} · DEMO
+                  {properties.find((p) => p.id === t.propertyId)?.name} ·{" "}
+                  {isFamily || a?.isDemo === false ? "UNOS" : "DEMO"}
                 </small>
               </span>
               <strong>

@@ -56,6 +56,22 @@ export function validateBills(value: unknown): Bill[] {
     if (b.notes !== undefined && typeof b.notes !== "string")
       throw new Error("Neispravna napomena.");
     if (
+      b.documentId !== undefined &&
+      (typeof b.documentId !== "string" ||
+        !/^[a-zA-Z0-9_-]{1,128}$/.test(b.documentId))
+    )
+      throw new Error("Neispravan dokument.");
+    if (
+      b.confidence !== undefined &&
+      (typeof b.confidence !== "number" ||
+        !Number.isFinite(b.confidence) ||
+        b.confidence < 0 ||
+        b.confidence > 100)
+    )
+      throw new Error("Neispravna OCR pouzdanost.");
+    if (b.isDemo !== undefined && typeof b.isDemo !== "boolean")
+      throw new Error("Neispravna oznaka DEMO podataka.");
+    if (
       b.source !== undefined &&
       !["manual", "paper", "email"].includes(String(b.source))
     )
@@ -80,7 +96,7 @@ export function createBackup(bills: Bill[]): string {
       app: "MacaniRacuni",
       version: 1,
       exportedAt: new Date().toISOString(),
-      demo: true,
+      demo: bills.every((b) => b.isDemo !== false),
       bills: validateBills(bills),
     },
     null,

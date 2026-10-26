@@ -1,0 +1,58 @@
+.family-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #48216d;
+}
+.family-title p {
+  margin: 6px 0 0 !important;
+  font-size: 11px !important;
+}
+.family-panel > p {
+  line-height: 1.8;
+  font-size: 12px;
+  color: #756b77;
+}
+.family-panel .primary {
+  width: max-content;
+}
+.family-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #48216d;
+  font-size: 12px;
+  margin-top: 16px;
+}
+.family-conflict {
+  padding: 18px;
+  margin-top: 18px;
+  border-radius: 14px;
+  background: #f4eac8;
+}
+.family-conflict h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.family-conflict p {
+  font-size: 11px;
+}
+.family-panel .backup-actions a {
+  box-sizing: border-box;
+}
+.conflict-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  table-layout: fixed;
+  margin-top: 14px;
+}
+.conflict-compare th,
+.conflict-compare td {
+  padding: 9px 6px;
+  border-bottom: 1px solid #48216d20;
+  text-align: left;
+  overflow-wrap: anywhere;
+}

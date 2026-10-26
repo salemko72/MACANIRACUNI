@@ -1,61 +1,54 @@
-# MacaniRacuni — Faza 1
+# MacaniRacuni
 
-Javna DEMO verzija: [macaniracuni.salemko.workers.dev](https://macaniracuni.salemko.workers.dev/). Postupak objave, provjere i prijenosa lokalnih podataka opisan je u [DEPLOYMENT.md](DEPLOYMENT.md).
+[Otvori aplikaciju](https://macaniracuni.salemko.workers.dev/)
 
-Lokalna DEMO PWA za porodičnu evidenciju mjesečnih računa. Svi iznosi, dobavljačke stavke i historija su ilustrativni podaci.
+Porodična evidencija devet očekivanih mjesečnih računa za Sarajevo i Nišiće. Izmjene prijema i plaćanja su nezavisne; dokument nikada nije dokaz plaćanja.
 
-## Pokretanje
+## Pokretanje i provjere
 
-Potreban je Node.js 22.12+ ili 24 LTS. U PowerShellu:
+Node.js24 LTS; lokalno se koristi Microsoft Edge za browser testove.
 
 ```powershell
 cd C:\MacaniRacuni
-npm install
+npm ci
 npm run dev
 ```
-
-Otvorite adresu koju ispiše Vite (uobičajeno http://127.0.0.1:5173).
 
 ```powershell
 npm test
 npm run build
-npm run preview
+npm run build:worker
+npx playwright test
+npm run test:ocr
 ```
 
-`preview` služi produkcijski build na http://127.0.0.1:4173. PWA se instalira iz menija podržanog preglednika; offline podrška se aktivira u produkcijskom buildu nakon prve posjete. Za pristup s telefona koristite HTTPS hosting; HTTP preko lokalne mreže nema punu PWA podršku.
+Build priprema OCR runtime iz instaliranih verzija i službenih, verzionisanih jezičkih podataka. Prva priprema zahtijeva internet. OCR datoteke se ne spremaju u Git; `scripts/prepare-ocr.mjs` ih reproducibilno priprema u `public/ocr/`.
 
 ## Šta radi
 
-- Mjesec: devet stalnih očekivanih računa, izbor mjeseca, Sarajevo / Nišići filter, sažetak poznatih iznosa.
-- Detalj: prijem i plaćanje odvojeno, iznos, rok, datum izdavanja, izvor, napomena i prethodni dug/preplata iz dokumenta.
-- Novi mjesec počinje bez iznosa i bez potvrda prijema ili plaćanja; historija ostaje sačuvana.
-- Statistika: mjesečni poznati zbirovi i poređenje iznosa po dobavljaču. Različit obuhvat nije dokaz promjene cijena.
-- localStorage čuva izmjene u istom pregledniku. Nije višekorisnička baza ni sigurnosna kopija. Ključ: `macaniracuni-demo-v1`.
-- Hash routing omogućuje direktno otvaranje detalja bez serverskih rewrite pravila.
+- Mjesec, Sarajevo/Nišići filter, devet stalnih stavki, poznati iznosi i statistika.
+- Ručno uređivanje, datum prijema i plaćanja, napomene, dug/preplata iz dokumenta.
+- Kamera ili fotografija JPEG/PNG/WebP; PDF tekst ili OCR prve stranice. Višestrani PDF je jasno označen; ostale stranice nisu automatski obrađene.
+- Lokalno prepoznavanje na bosanskom i engleskom: prijedlog dobavljača, nekretnine, obračunskog mjeseca, iznosa i roka. Nedovoljno pouzdana polja ostaju za provjeru. OCR procenat mjeri pouzdanost teksta, a ne garantovanu ispravnost podataka.
+- Pregled i korekcija prije spremanja; zaštita postojećih stvarnih unosa; prepoznavanje već priložene iste datoteke na uređaju.
+- Original u IndexedDB, pregled i preuzimanje kroz detalj. OCR obrada ne šalje račun serveru ni vanjskom AI servisu.
+- Porodična prijava jednokratnim email kodom za privatno dozvoljene adrese; server provjerava potpisani Cloudflare Access JWT i allowlist.
+- D1 sinhronizacija podataka računa, lokalni red izmjena bez veze, automatsko spajanje nezavisnih izmjena i pregled konflikta kada se isto polje promijeni na dva uređaja.
+- DEMO i porodični dio su odvojeni. Prvi porodični ulazak ne šalje DEMO iznose u bazu.
+- JSON izvoz/uvoz podataka, uz validaciju i potvrdu zamjene. Originali nisu u JSON kopiji; mogu se preuzeti iz detalja.
 
-## Šta je placeholder
+## Uređaji i privatnost
 
-Skeniranje, dokumenti, Gmail, OCR/AI, Cloudflare, autentikacija, obavijesti, sinhronizacija i plaćanje nisu povezani. Izvor „Stiglo na mail” je ručna oznaka. Dug/preplata nije provjereno stanje kod dobavljača.
+Na iPhoneu: Safari → Dijeli → Dodaj na početni zaslon. Pregled radi bez mreže nakon prvog otvaranja; runtime OCR-a preuzima se tek pri skeniranju i može se predmemorirati na uređaju.
+
+Originalne slike/PDF i prepoznati puni tekst ostaju na uređaju na kojem su dodani. Porodična sinhronizacija prenosi polja računa i referencu na dokument, a ne original. Drugi uređaj jasno pokazuje ako original nije lokalno dostupan. Brisanje podataka preglednika briše lokalne originale i neposlane izmjene.
+
+Za porodični dio: Postavke → Prijavi porodicu. Kod dostavlja Cloudflare tek nakon što korisnik sam zatraži prijavu. Lokalni unosi ostaju odvojeni i sačuvani. Odjava je dostupna nakon slanja izmjena; briše lokalnu kopiju sinhronizovanih polja, a ne podatke na serveru. Originalne datoteke sačuvane u pregledniku ostaju na uređaju.
+
+## Još nije uključeno
+
+Gmail/OAuth, push podsjetnici, automatsko plaćanje, direktna provjera stanja kod dobavljača i sinhronizacija originalnih dokumenata. Ne predstavljati ove mogućnosti kao aktivne.
 
 ## Struktura
 
-`src/domain.ts`: modeli, očekivane stavke, kreiranje mjeseca, DEMO seed i sažeci. `src/domain.test.ts`: domenski testovi. `src/main.tsx`: prikazi i lokalno čuvanje. `src/style.css`: responsive paleta iz briefa. `vite.config.ts`: PWA i build. Originalni brief i referenca su u `brief/MacaniRacuni_Codex_Paket/`.
-
-Faza 2 zahtijeva poseban dogovor i nije implementirana.
-
-## Provjere preglednika
-
-```powershell
-npx playwright test
-```
-
-Testovi koriste instalirani Microsoft Edge (`channel: msedge`), mobilnu širinu 390 px i desktop 1440 px. Snimci se spremaju u `artifacts/`.
-
-## Dorada lokalne verzije
-
-Statistika ima vlastiti izbor mjeseca, filter nekretnine, šestomjesečni pregled i sažetak poznatih plaćenih/preostalih iznosa. Detalj omogućuje korekciju datuma prijema nezavisno od obračunskog mjeseca.
-
-Postavke nude JSON izvoz svih mjeseci i uvoz kopije. Uvoz provjerava format, valutu, statuse, iznose, datume i duplikate, zatim traži potvrdu zamjene. Neispravna datoteka ne mijenja evidenciju. Kopije su lokalne i nisu automatski spremljene na GitHub ili Cloudflare.
-
-
-Pregled pamti izabrani obračunski mjesec i nekretninu u istom pregledniku. U detalju je moguće unijeti i datum plaćanja. Brza dugmad za potvrdu prijema/plaćanja čuvaju sva popunjena polja uz provjeru ispravnosti; ručno uneseni datumi ostaju sačuvani.
+`src/domain.ts` domenski modeli i DEMO podaci; `src/scanning/` prepoznavanje, UI i lokalni dokumenti; `src/family/` klijentska sinhronizacija; `server/worker.ts` privatni API; `server/schema.sql` D1 migracija. Upute za objavu: [DEPLOYMENT.md](DEPLOYMENT.md). Originalni brief je u `brief/`.

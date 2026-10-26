@@ -1233,3 +1233,13 @@ textarea {
     line-height: 1;
   }
 }
+.draft-conflict-choice {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 0 !important;
+}
+.draft-conflict-choice input {
+  width: auto;
+}

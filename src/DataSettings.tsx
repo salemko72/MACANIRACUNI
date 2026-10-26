@@ -6,9 +6,11 @@ import type { Bill } from "./domain";
 export function DataSettings({
   bills,
   restore,
+  isFamily = false,
 }: {
   bills: Bill[];
   restore: (bills: Bill[]) => void;
+  isFamily?: boolean;
 }) {
   const [pending, setPending] = useState<Bill[] | null>(null);
   const [message, setMessage] = useState("");
@@ -20,7 +22,7 @@ export function DataSettings({
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = `MacaniRacuni-DEMO-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `MacaniRacuni-${!isFamily && bills.every((b) => b.isDemo !== false) ? "DEMO" : "KOPIJA"}-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setMessage("Sigurnosna kopija je pripremljena za preuzimanje.");
@@ -29,8 +31,8 @@ export function DataSettings({
     <article>
       <h2>Sigurnosna kopija</h2>
       <p>
-        Sačuvajte sve mjesece, iznose i napomene u JSON datoteku. Kopija sadrži
-        DEMO evidenciju iz ovog preglednika.
+        Sačuvajte mjesece, iznose i napomene u JSON datoteku. Originalne slike i
+        PDF dokumenti nisu uključeni; preuzmite ih kroz detalj računa.
       </p>
       <div className="backup-actions">
         <button className="primary" onClick={download}>

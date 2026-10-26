@@ -37,7 +37,7 @@ test("mobilni tok, statusi, čuvanje, filter i novi mjesec", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Skeniraj", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Račun na dohvat ruke." }),
+    page.getByRole("heading", { name: "Dodaj račun." }),
   ).toBeVisible();
 });
 test("desktop pregled bez horizontalnog preljeva", async ({ page }) => {
