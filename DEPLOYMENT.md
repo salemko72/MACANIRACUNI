@@ -41,6 +41,8 @@ Dev harness testovi skenera preskaču se na javnoj adresi; stvarni test skeniran
 
 Anonimni `/api/login` treba voditi na Cloudflare email prijavu; proizvoljna zaglavlja ne smiju otvoriti evidenciju. Ne slati email kodove kroz automatizovani smoke test bez korisnikove radnje. Uspješnu stvarnu prijavu oba člana provjerava se na njihovim uređajima.
 
+PWA `navigateFallbackDenylist` mora izuzeti i `/api` i `/cdn-cgi` sa svim podputanjama. Access završava prijavu preko `/cdn-cgi/access/authorized`; ako service worker tu vrati keširani `index.html`, aplikacija se otvara bez završene prijave. Pri provjeri prijave obavezno koristiti već instaliran service worker, ne samo novi preglednik bez PWA keša.
+
 `POST /api/scan` koristi istu privatnu Access provjeru, samo same-origin JSON sa JPEG/PNG data URI, najviše 4 MiB. Migracija dodaje `ai_scan_usage` za atomski limit 20 pokušaja po UTC danu. Mistral Vision se poziva kroz nativni `AI` binding; ne trebaju vanjski API ključevi. AI nije dostupan bez prijave. `/api/login?next=scan` vraća na skeniranje. Sirove slike, OCR tekst i odgovore modela ne logovati.
 
 ## Prijenos i originali

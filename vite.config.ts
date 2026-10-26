@@ -23,7 +23,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       workbox: {
         globIgnores: ["**/ocr/**", "version.json"],
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/cdn-cgi(?:\/|$)/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
