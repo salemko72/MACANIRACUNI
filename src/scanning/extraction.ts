@@ -1,4 +1,5 @@
 export type ScanSuggestion = {
+  engine?: "ai" | "local";
   text: string;
   confidence: number;
   amount?: number;

@@ -1,13 +1,28 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+const buildInfo = {
+  id: new Date().toISOString(),
+  builtAt: new Date().toISOString(),
+};
 export default defineConfig({
+  define: { __APP_BUILD__: JSON.stringify(buildInfo) },
   plugins: [
+    {
+      name: "app-build-version",
+      generateBundle() {
+        this.emitFile({
+          type: "asset",
+          fileName: "version.json",
+          source: JSON.stringify(buildInfo),
+        });
+      },
+    },
     react(),
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
-        globIgnores: ["**/ocr/**"],
+        globIgnores: ["**/ocr/**", "version.json"],
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {

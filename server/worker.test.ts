@@ -95,6 +95,99 @@ async function request(
   );
 }
 
+describe("AI scan API", () => {
+  async function scan(
+    env: Env,
+    input: unknown = { image: "data:image/jpeg;base64,/9j/2Q==" },
+    extra: Record<string, string> = {},
+  ) {
+    return handler.fetch(
+      new Request(origin + "/api/scan", {
+        method: "POST",
+        headers: {
+          "Cf-Access-Jwt-Assertion": await token(),
+          Origin: origin,
+          "Content-Type": "application/json",
+          ...extra,
+        },
+        body: JSON.stringify(input),
+      }),
+      env,
+    );
+  }
+  it("uses the native vision model and returns only validated invoice suggestions", async () => {
+    const { env } = environment();
+    let model = "";
+    env.AI = {
+      async run(name, input) {
+        model = name;
+        expect(input).toHaveProperty("messages");
+        return {
+          response: JSON.stringify({
+            text: "Invoice",
+            amount: 25.5,
+            currency: "BAM",
+            paymentStatus: "paid",
+          }),
+        };
+      },
+    };
+    const response = await scan(env);
+    expect(response.status).toBe(200);
+    expect(model).toContain("mistral-small");
+    const body = await response.json();
+    expect(body).toMatchObject({ amount: 25.5, engine: "ai" });
+    expect(body).not.toHaveProperty("paymentStatus");
+  });
+  it("limits household scans atomically and refuses further inference", async () => {
+    const { env, db } = environment();
+    let calls = 0;
+    env.AI = {
+      async run() {
+        calls++;
+        return { response: '{"text":"Invoice"}' };
+      },
+    };
+    db.prepare("INSERT INTO ai_scan_usage VALUES (?,19)").run(
+      new Date().toISOString().slice(0, 10),
+    );
+    expect((await scan(env)).status).toBe(200);
+    expect((await scan(env)).status).toBe(429);
+    expect(calls).toBe(1);
+  });
+  it("rejects foreign origin and unsupported images before inference", async () => {
+    const { env } = environment();
+    let calls = 0;
+    env.AI = {
+      async run() {
+        calls++;
+        return {};
+      },
+    };
+    expect(
+      (await scan(env, undefined, { Origin: "https://other.example" })).status,
+    ).toBe(403);
+    expect(
+      (await scan(env, { image: "https://other.example/invoice.jpg" })).status,
+    ).toBe(400);
+    expect(
+      (await scan(env, { image: "data:image/svg+xml;base64,AAAA" })).status,
+    ).toBe(400);
+    expect(calls).toBe(0);
+  });
+  it("fails explicitly when the model gives no usable result", async () => {
+    const { env } = environment();
+    env.AI = {
+      async run() {
+        return {};
+      },
+    };
+    const response = await scan(env);
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ code: "ai_unavailable" });
+  });
+});
+
 describe("private family API", () => {
   it("fails closed until Access configuration exists, even with a spoofed email", async () => {
     const response = await worker.fetch(

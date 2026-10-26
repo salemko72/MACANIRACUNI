@@ -1,6 +1,7 @@
 import { extractBill, type ScanSuggestion } from "./extraction";
 import type { Worker as OcrWorker } from "tesseract.js";
 import { chooseRecognition, shouldRetryRecognition } from "./quality";
+import { readWithAi } from "./ai";
 
 type Progress = (value: number, label: string) => void;
 const aborted = () =>
@@ -42,6 +43,7 @@ export async function recognizeDocument(
   file: File,
   onProgress: Progress,
   signal?: AbortSignal,
+  mode: "ai" | "local" = "ai",
 ): Promise<ScanSuggestion> {
   checkAbort(signal);
   if (
@@ -61,6 +63,7 @@ export async function recognizeDocument(
   let canvas: HTMLCanvasElement | undefined;
   let stopped = false;
   let retrying = false;
+  const useAi = mode === "ai" && navigator.onLine;
   let rejectAbort: (reason: unknown) => void = () => {};
   const abortPromise = new Promise<never>((_, reject) => {
     rejectAbort = reject;
@@ -77,6 +80,10 @@ export async function recognizeDocument(
     if (!stopped) onProgress(Math.max(0, Math.min(100, value)), label);
   };
   async function ocr(image: HTMLCanvasElement): Promise<ScanSuggestion> {
+    if (useAi) {
+      progress(30, "AI čita račun i izdvaja podatke…");
+      return readWithAi(image, signal);
+    }
     progress(
       15,
       "Priprema lokalnog OCR-a. Prvo pokretanje preuzima jezičke datoteke.",
@@ -163,7 +170,7 @@ export async function recognizeDocument(
         text += item.str + (item.hasEOL ? "\n" : " ");
         lastY = y;
       }
-      if (text.replace(/\s/g, "").length >= 30) {
+      if (!useAi && text.replace(/\s/g, "").length >= 30) {
         result = extractBill(text, 100);
         result.warnings.push(
           "Tekst je pročitan iz PDF-a. I dalje provjerite sva predložena polja.",
@@ -213,6 +220,7 @@ export async function recognizeDocument(
       (error instanceof Error && error.name === "AbortError")
     )
       throw aborted();
+    if (useAi && error instanceof Error) throw error;
     throw new Error(
       "Račun nije moguće pročitati. Provjerite da PDF nije zaštićen i da je fotografija jasna. Za prvo skeniranje potrebna je veza za preuzimanje OCR datoteka.",
     );

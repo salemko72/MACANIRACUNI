@@ -18,6 +18,7 @@ import { recognizeDocument } from "./recognize";
 import "./scanner.css";
 export type { LocalDocument } from "./documents";
 export interface ScanDraft {
+  engine?: "ai" | "local";
   templateId: string;
   billingMonth: string;
   amount?: number;
@@ -56,6 +57,8 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [replaceConfirmed, setReplaceConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [localOnly, setLocalOnly] = useState(!navigator.onLine);
+  const [engine, setEngine] = useState<"ai" | "local">("ai");
   const controller = useRef<AbortController | null>(null);
   const camera = useRef<HTMLInputElement>(null);
   const upload = useRef<HTMLInputElement>(null);
@@ -142,7 +145,9 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
           }
         },
         abort.signal,
+        localOnly ? "local" : "ai",
       );
+      setEngine(suggestion.engine === "ai" ? "ai" : "local");
       if (abort.signal.aborted) return;
       const inferred =
         templates.find((t) => t.id === suggestion.templateId) ??
@@ -161,19 +166,23 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
         properties.some((p) => p.id === location) ? location : "sarajevo",
       );
       setDraft({
+        engine: suggestion.engine === "ai" ? "ai" : "local",
         templateId: inferred?.id ?? "",
         billingMonth: suggestion.billingMonth ?? month,
         amount: suggestion.amount,
         dueDate: suggestion.dueDate,
         issueDate: suggestion.issueDate,
-        receiptStatus: suggestion.confidence < 75 ? "needs_review" : "received",
+        receiptStatus:
+          suggestion.engine !== "ai" && suggestion.confidence < 75
+            ? "needs_review"
+            : "received",
         text: suggestion.text,
         confidence: suggestion.confidence,
       });
       setWarnings(suggestion.warnings);
       setDetailsOpen(
         !inferred ||
-          suggestion.confidence < 75 ||
+          (suggestion.engine !== "ai" && suggestion.confidence < 75) ||
           suggestion.amount === undefined ||
           !suggestion.dueDate,
       );
@@ -252,7 +261,15 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
       {error ? (
         <div className="scan-notice scan-error" role="alert">
           <AlertTriangle size={19} />
-          <span>{error}</span>
+          <span>
+            {error}
+            {error.includes("prijavi") ? (
+              <>
+                <br />
+                <a href="/api/login?next=scan">Prijavi se za AI čitanje →</a>
+              </>
+            ) : null}
+          </span>
         </div>
       ) : null}
       {step === "choose" ? (
@@ -296,6 +313,13 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
             }}
           />
           <div className="scan-entry-actions">
+            <p className="scan-small scan-centered">
+              <strong>
+                {localOnly
+                  ? "Čitanje na uređaju"
+                  : "AI čitač računa · Mistral Vision"}
+              </strong>
+            </p>
             <button
               type="button"
               className="scan-primary"
@@ -311,6 +335,14 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
               <Upload size={20} /> Priloži sliku ili PDF
             </button>
           </div>
+          <label className="scan-review-option">
+            <input
+              type="checkbox"
+              checked={localOnly}
+              onChange={(event) => setLocalOnly(event.target.checked)}
+            />
+            <span>Čitaj na uređaju bez AI-a</span>
+          </label>
           <p className="scan-small scan-centered">
             JPEG, PNG, WebP ili PDF · do 20 MB
             <br />
@@ -319,8 +351,9 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
           <div className="scan-privacy">
             <ShieldCheck size={19} />
             <span>
-              Prepoznavanje i original ostaju na ovom uređaju. Prvo korištenje
-              preuzima alat za čitanje teksta.
+              {localOnly
+                ? "Lokalno čitanje radi bez slanja računa. Prvo korištenje preuzima alat za čitanje teksta."
+                : "AI obrada preko Cloudflarea · porodična prijava · do 20 čitanja dnevno. Original se čuva na ovom uređaju."}
             </span>
           </div>
         </>
@@ -374,8 +407,13 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
             </div>
             <div className="scan-review-content">
               <div className="scan-detected">
-                <Check size={16} /> Dokument je pročitan{" "}
-                <span>{Math.round(draft.confidence)}%</span>
+                <Check size={16} />{" "}
+                {engine === "ai"
+                  ? "Pročitano AI čitačem"
+                  : "Dokument je pročitan"}{" "}
+                {engine === "local" ? (
+                  <span>{Math.round(draft.confidence)}%</span>
+                ) : null}
               </div>
               <h3>{supplier?.providerName ?? "Odaberi vrstu računa"}</h3>
               <p className="scan-muted">

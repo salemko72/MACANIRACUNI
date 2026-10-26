@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 import { validateBills } from "../src/backup";
 import type { Bill } from "../src/domain";
+import { SCAN_MODEL, SCAN_PROMPT, parseAiInvoice } from "./scan";
 
 // A narrow structural binding contract also allows SQLite integration tests.
 // D1Database and Fetcher satisfy these interfaces without runtime adapters.
@@ -10,6 +11,7 @@ interface Statement {
   all<T>(): Promise<{ results: T[] }>;
 }
 export interface Env {
+  AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
   DB: { prepare(sql: string): Statement };
   ASSETS: { fetch(request: Request): Promise<Response> };
   ACCESS_ISSUER?: string;
@@ -82,14 +84,17 @@ function authConfig(env: Env) {
   }
 }
 
-async function boundedJson(request: Request): Promise<unknown> {
+async function boundedJson(
+  request: Request,
+  limit = maxBodyBytes,
+): Promise<unknown> {
   if (
     request.headers.get("Content-Type")?.split(";")[0].trim().toLowerCase() !==
     "application/json"
   )
     throw new ApiError(415, "json_required");
   const length = request.headers.get("Content-Length");
-  if (length && Number(length) > maxBodyBytes)
+  if (length && Number(length) > limit)
     throw new ApiError(413, "body_too_large");
   if (!request.body) throw new ApiError(400, "invalid_body");
   const reader = request.body.getReader();
@@ -100,7 +105,7 @@ async function boundedJson(request: Request): Promise<unknown> {
       const { value, done } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > maxBodyBytes) {
+      if (size > limit) {
         await reader.cancel();
         throw new ApiError(413, "body_too_large");
       }
@@ -247,10 +252,53 @@ export function createHandler(options: { keys?: JWTVerifyGetKey } = {}) {
         if (request.method === "GET" && url.pathname === "/api/session")
           return json({ email });
         if (request.method === "GET" && url.pathname === "/api/login")
-          return redirect("/#settings");
+          return redirect(
+            url.searchParams.get("next") === "scan" ? "/#scan" : "/#settings",
+          );
         if (request.method === "GET" && url.pathname === "/api/logout")
           return redirect("/cdn-cgi/access/logout");
         if (!env.DB) return json({ code: "storage_not_configured" }, 503);
+        if (request.method === "POST" && url.pathname === "/api/scan") {
+          if (request.headers.get("Origin") !== url.origin)
+            throw new ApiError(403, "origin_forbidden");
+          if (!env.AI) throw new ApiError(503, "ai_not_configured");
+          const input = (await boundedJson(request, 4 * 1024 * 1024)) as {
+            image?: unknown;
+          };
+          if (
+            !input ||
+            typeof input.image !== "string" ||
+            !/^data:image\/(?:jpeg|png);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+              input.image,
+            )
+          )
+            throw new ApiError(400, "invalid_image");
+          const today = new Date().toISOString().slice(0, 10);
+          const reservation = await env.DB.prepare(
+            "INSERT INTO ai_scan_usage(day, calls) VALUES (?1, 1) ON CONFLICT(day) DO UPDATE SET calls=calls+1 WHERE calls<20 RETURNING calls",
+          )
+            .bind(today)
+            .first<{ calls: number }>();
+          if (!reservation) throw new ApiError(429, "daily_scan_limit");
+          try {
+            const output = await env.AI.run(SCAN_MODEL, {
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: SCAN_PROMPT },
+                    { type: "image_url", image_url: { url: input.image } },
+                  ],
+                },
+              ],
+              temperature: 0,
+              max_tokens: 3000,
+            });
+            return json(parseAiInvoice(output));
+          } catch {
+            throw new ApiError(502, "ai_unavailable");
+          }
+        }
         if (request.method === "GET" && url.pathname === "/api/bills") {
           const { results } = await env.DB.prepare(
             "SELECT body, revision FROM family_bills ORDER BY billing_month, template_id",

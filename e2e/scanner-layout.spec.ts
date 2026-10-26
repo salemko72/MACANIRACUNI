@@ -5,6 +5,9 @@ test("reads a tilted invoice table with currency in a header and multiline dates
 }) => {
   test.setTimeout(120_000);
   await page.goto("/#scan");
+  await page
+    .getByRole("checkbox", { name: "Čitaj na uređaju bez AI-a" })
+    .check();
   const image = await page.evaluate(() => {
     const c = document.createElement("canvas");
     c.width = 1800;

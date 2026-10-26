@@ -10,3 +10,7 @@ CREATE TABLE IF NOT EXISTS family_bills (
   updated_at TEXT NOT NULL,
   UNIQUE (template_id, billing_month)
 );
+CREATE TABLE IF NOT EXISTS ai_scan_usage (
+  day TEXT PRIMARY KEY NOT NULL,
+  calls INTEGER NOT NULL CHECK(calls >= 0)
+);

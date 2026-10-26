@@ -39,6 +39,7 @@ import { saveDocument, deleteDocument } from "./scanning/documents";
 import { DocumentPreview } from "./scanning/DocumentPreview";
 import { currentBillingMonth } from "./preferences";
 import { paymentAfterScan } from "./scanning/link";
+import { BuildVersion } from "./BuildVersion";
 const money = (n: number) =>
   new Intl.NumberFormat("de-DE", {
     minimumFractionDigits: 2,
@@ -180,16 +181,19 @@ function App() {
           <span className="eyebrow desktop-label">
             PORODIČNI PREGLED RAČUNA
           </span>
-          <span className="demo">
-            <i />
-            {ledger.mode === "family"
-              ? "PORODICA"
-              : bills.some((b) => b.isDemo === false)
-                ? mixedDemo
-                  ? "DEMO + UNOSI"
-                  : "LOKALNI UNOSI"
-                : "DEMO PODACI"}
-          </span>
+          <div className="header-version">
+            <span className="demo">
+              <i />
+              {ledger.mode === "family"
+                ? "PORODICA"
+                : bills.some((b) => b.isDemo === false)
+                  ? mixedDemo
+                    ? "DEMO + UNOSI"
+                    : "LOKALNI UNOSI"
+                  : "DEMO PODACI"}
+            </span>
+            <BuildVersion />
+          </div>
         </header>
         {warning && (
           <p role="alert" className="notice">
@@ -441,7 +445,8 @@ function App() {
                   receiptStatus: draft.receiptStatus,
                   source: "paper",
                   documentId: document.id,
-                  confidence: draft.confidence,
+                  confidence:
+                    draft.engine === "ai" ? undefined : draft.confidence,
                   receivedAt: new Date().toISOString(),
                   isDemo: false,
                 });
@@ -830,7 +835,7 @@ function Detail({
         <p className="muted">
           Prethodno stanje je podatak iz dokumenta, bez provjere kod dobavljača.
           {b.documentId
-            ? `Original je priložen. OCR pouzdanost: ${Math.round(b.confidence ?? 0)}%. Provjerite prepoznate podatke.`
+            ? `Original je priložen.${b.confidence !== undefined ? ` OCR pouzdanost: ${Math.round(b.confidence)}%.` : ""} Provjerite prepoznate podatke.`
             : "Dokument nije priložen. Podaci su ručno uneseni."}
         </p>
         <button className="primary" type="submit">

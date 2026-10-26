@@ -48,6 +48,9 @@ test("real camera image OCR saves a local original and keeps paid status across 
     return canvas.toDataURL("image/png").split(",")[1];
   });
   await page
+    .getByRole("checkbox", { name: "Čitaj na uređaju bez AI-a" })
+    .check();
+  await page
     .getByLabel("Priloži sliku ili PDF", { exact: true })
     .setInputFiles({
       name: "synthetic-electricity.png",
