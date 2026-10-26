@@ -18,6 +18,8 @@ import {
   Trash2,
   ScanLine,
   FileText,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import {
   ensureMonth,
@@ -166,6 +168,33 @@ function App() {
               <span>{String(label)}</span>
             </button>
           ))}
+          <button
+            className="account-nav"
+            title={
+              ledger.mode === "family"
+                ? `Prijavljen/a: ${ledger.email}${ledger.pendingCount || Object.keys(ledger.conflicts).length ? " · Prvo uskladi izmjene u postavkama." : ""}`
+                : "Porodična prijava emailom"
+            }
+            disabled={
+              ledger.mode === "family" &&
+              (ledger.pendingCount > 0 ||
+                Object.keys(ledger.conflicts).length > 0)
+            }
+            onClick={() =>
+              ledger.mode === "family"
+                ? ledger.logout()
+                : location.assign(
+                    "/api/login" + (route === "scan" ? "?next=scan" : ""),
+                  )
+            }
+          >
+            {ledger.mode === "family" ? (
+              <LogOut size={21} />
+            ) : (
+              <LogIn size={21} />
+            )}
+            <span>{ledger.mode === "family" ? "Odjava" : "Prijava"}</span>
+          </button>
         </nav>
         <div className="aside-bottom">
           <House size={22} />

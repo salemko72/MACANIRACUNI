@@ -432,7 +432,8 @@ test("logout clears the private cache before leaving and signed-out reopening sh
   expect(
     await page.evaluate(() => localStorage.getItem("macaniracuni-family-v1")),
   ).not.toBeNull();
-  await page.getByRole("button", { name: "Odjavi se", exact: true }).click();
+  await page.getByRole("button", { name: "Mjesec", exact: true }).click();
+  await page.getByRole("button", { name: "Odjava", exact: true }).click();
   await expect(page.locator(".family-panel")).toContainText(
     "Lokalna evidencija",
   );

@@ -106,6 +106,36 @@ nav button.active {
 nav button:hover:not(.active) {
   background: #e9dce6;
 }
+nav button.account-nav {
+  position: fixed;
+  right: 24px;
+  bottom: 20px;
+  z-index: 30;
+  background: #fff9fc;
+  border: 1px solid #48216d25;
+  box-shadow: 0 4px 18px #48216d15;
+  color: #48216d;
+}
+nav button.account-nav:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+@media (max-width: 640px) {
+  nav {
+    gap: 0;
+  }
+  nav button {
+    min-width: 0;
+    flex: 1;
+    padding: 8px 4px;
+  }
+  nav button.account-nav {
+    position: static;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+}
 .aside-bottom {
   display: flex;
   gap: 10px;
