@@ -96,6 +96,30 @@ async function request(
 }
 
 describe("AI scan API", () => {
+  it("reports active only after real model response and caches the provider health check", async () => {
+    const { env } = environment();
+    let calls = 0;
+    env.AI = {
+      async run() {
+        calls++;
+        return { response: "OK" };
+      },
+    };
+    const a = await request("/api/ai/status", env);
+    expect(a.status).toBe(200);
+    expect(await a.json()).toMatchObject({
+      active: true,
+      model: "Mistral Vision",
+    });
+    await request("/api/ai/status", env);
+    expect(calls).toBe(1);
+  });
+  it("does not report active when no AI binding is configured", async () => {
+    const { env } = environment();
+    const response = await request("/api/ai/status", env);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ active: false });
+  });
   async function scan(
     env: Env,
     input: unknown = { image: "data:image/jpeg;base64,/9j/2Q==" },
@@ -189,6 +213,40 @@ describe("AI scan API", () => {
 });
 
 describe("private family API", () => {
+  it("accepts the signed Access application cookie when the assertion header is absent", async () => {
+    const { env } = environment();
+    const response = await handler.fetch(
+      new Request(origin + "/api/session", {
+        headers: {
+          Cookie:
+            "theme=pink; CF_Authorization=" + (await token()) + "; other=value",
+        },
+      }),
+      env,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ email: "member@example.com" });
+  });
+  it("never accepts a forged application cookie or an invalid explicit assertion", async () => {
+    const { env } = environment();
+    const response = await handler.fetch(
+      new Request(origin + "/api/session", {
+        headers: { Cookie: "CF_Authorization=fake" },
+      }),
+      env,
+    );
+    expect(response.status).toBe(401);
+    const conflicting = await handler.fetch(
+      new Request(origin + "/api/session", {
+        headers: {
+          Cookie: "CF_Authorization=" + (await token()),
+          "Cf-Access-Jwt-Assertion": "fake",
+        },
+      }),
+      env,
+    );
+    expect(conflicting.status).toBe(401);
+  });
   it("fails closed until Access configuration exists, even with a spoofed email", async () => {
     const response = await worker.fetch(
       new Request(origin + "/api/session", {

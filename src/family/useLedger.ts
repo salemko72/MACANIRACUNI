@@ -534,7 +534,16 @@ export function useLedger(month: string) {
       setMode("family");
       setEmail(who);
     };
-    (async () => {
+    let checkingSession = false;
+    let recheckSession = false;
+    const checkSession = async (): Promise<void> => {
+      if (!current()) return;
+      if (checkingSession) {
+        recheckSession = true;
+        return;
+      }
+      checkingSession = true;
+      recheckSession = false;
       try {
         const session = await request("/api/session", {
           signal: controller.signal,
@@ -572,10 +581,15 @@ export function useLedger(month: string) {
           showError(err);
         } else
           setStatus(err instanceof RequestError ? "anonymous" : "unavailable");
+      } finally {
+        checkingSession = false;
+        if (recheckSession && current() && !active.current) void checkSession();
       }
-    })();
+    };
+    void checkSession();
     const tick = () => {
       if (active.current) void sync();
+      else if (current()) void checkSession();
     };
     const timer = setInterval(tick, 20000);
     const storage = (event: StorageEvent) => {
@@ -602,6 +616,7 @@ export function useLedger(month: string) {
     };
     window.addEventListener("online", tick);
     window.addEventListener("focus", tick);
+    window.addEventListener("pageshow", tick);
     window.addEventListener("storage", storage);
     return () => {
       controller.abort();
@@ -614,6 +629,7 @@ export function useLedger(month: string) {
       clearInterval(timer);
       window.removeEventListener("online", tick);
       window.removeEventListener("focus", tick);
+      window.removeEventListener("pageshow", tick);
       window.removeEventListener("storage", storage);
     };
   }, []);

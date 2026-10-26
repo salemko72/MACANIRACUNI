@@ -1,6 +1,33 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import type { Bill } from "../src/domain";
 
+test("returning to the app after email login rechecks an initially anonymous session", async ({
+  page,
+}) => {
+  let authenticated = false;
+  await page.route("**/api/session", (route) =>
+    route.fulfill(
+      authenticated
+        ? { json: { email: "member@example.test" } }
+        : { status: 401, json: { code: "unauthenticated" } },
+    ),
+  );
+  await page.route("**/api/bills", (route) =>
+    route.fulfill({ json: { bills: [] } }),
+  );
+  await page.goto("/#month");
+  await expect(
+    page.getByRole("button", { name: "Prijava", exact: true }),
+  ).toBeVisible();
+  // The browser can restore the existing SPA from its back/forward cache.
+  authenticated = true;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(
+    page.getByRole("button", { name: "Odjava", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".demo")).toHaveText("PORODICA");
+});
+
 type Version = { bill: Bill; revision: number };
 const initial: Bill = {
   id: "2026-10_s-water",

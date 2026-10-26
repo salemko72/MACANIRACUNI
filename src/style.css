@@ -217,6 +217,34 @@ header {
 .build-version time {
   white-space: nowrap;
 }
+.ai-connection {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: #77647c;
+  line-height: 1.2;
+}
+.ai-connection span {
+  font-size: 8px;
+}
+.ai-connection-active {
+  color: #247545;
+}
+.ai-connection-login,
+.ai-connection-unavailable {
+  color: #8a5434;
+}
+@media (max-width: 640px) {
+  .month-page .build-version {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    gap: 2px 12px;
+  }
+  .month-page header {
+    margin-bottom: 8px;
+  }
+}
 .build-version button {
   border: 0;
   background: none;

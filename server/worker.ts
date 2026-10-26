@@ -210,6 +210,8 @@ function writePayload(
 }
 
 export function createHandler(options: { keys?: JWTVerifyGetKey } = {}) {
+  let aiHealth:
+    { active: boolean; checkedAt: string; expiresAt: number } | undefined;
   // JWKS cache is cryptographic material only; no request or household data.
   let cachedIssuer: string | undefined;
   let cachedKeys: ReturnType<typeof createRemoteJWKSet> | undefined;
@@ -221,7 +223,14 @@ export function createHandler(options: { keys?: JWTVerifyGetKey } = {}) {
       try {
         const config = authConfig(env);
         if (!config) return json({ code: "auth_not_configured" }, 503);
-        const assertion = request.headers.get("Cf-Access-Jwt-Assertion");
+        const assertion =
+          request.headers.get("Cf-Access-Jwt-Assertion") ??
+          request.headers
+            .get("Cookie")
+            ?.split(";")
+            .map((part) => part.trim())
+            .find((part) => part.startsWith("CF_Authorization="))
+            ?.slice("CF_Authorization=".length);
         if (!assertion) return json({ code: "unauthenticated" }, 401);
         let email: string;
         try {
@@ -251,6 +260,43 @@ export function createHandler(options: { keys?: JWTVerifyGetKey } = {}) {
           return json({ code: "forbidden" }, 403);
         if (request.method === "GET" && url.pathname === "/api/session")
           return json({ email });
+        if (request.method === "GET" && url.pathname === "/api/ai/status") {
+          if (!env.AI)
+            return json({ active: false, code: "ai_not_configured" }, 503);
+          if (!aiHealth || aiHealth.expiresAt < Date.now()) {
+            let active = false;
+            try {
+              const output = (await env.AI.run(SCAN_MODEL, {
+                messages: [{ role: "user", content: "Reply with exactly OK." }],
+                max_tokens: 4,
+                temperature: 0,
+              })) as {
+                response?: string;
+                choices?: { message?: { content?: string } }[];
+              };
+              active = /\bOK\b/i.test(
+                output?.response ??
+                  output?.choices?.[0]?.message?.content ??
+                  "",
+              );
+            } catch {
+              /* A provider error must never become a green indicator. */
+            }
+            aiHealth = {
+              active,
+              checkedAt: new Date().toISOString(),
+              expiresAt: Date.now() + (active ? 300000 : 30000),
+            };
+          }
+          return json(
+            {
+              active: aiHealth.active,
+              checkedAt: aiHealth.checkedAt,
+              model: "Mistral Vision",
+            },
+            aiHealth.active ? 200 : 502,
+          );
+        }
         if (request.method === "GET" && url.pathname === "/api/login")
           return redirect(
             url.searchParams.get("next") === "scan" ? "/#scan" : "/#settings",

@@ -37,6 +37,7 @@ Build priprema OCR runtime iz instaliranih verzija i službenih, verzionisanih j
 - Pregled i korekcija prije spremanja; zaštita postojećih stvarnih unosa; prepoznavanje već priložene iste datoteke na uređaju.
 - Original u IndexedDB, pregled i preuzimanje kroz detalj. AI put šalje umanjenu JPEG sliku preko privatnog API-ja na Cloudflare; lokalni OCR ne šalje dokument.
 - Porodična prijava jednokratnim email kodom za privatno dozvoljene adrese; server provjerava potpisani Cloudflare Access JWT i allowlist.
+- Provjera prihvata potpisani Access JWT iz zaglavlja ili aplikacijskog kolačića; povratak iz email prijave ponovo provjerava sesiju i pri vraćanju stranice iz keša preglednika. Pri vrhu se prikazuje stanje Mistrala; zelena oznaka dolazi tek nakon uspješnog autentificiranog probnog poziva modelu.
 - D1 sinhronizacija podataka računa, lokalni red izmjena bez veze, automatsko spajanje nezavisnih izmjena i pregled konflikta kada se isto polje promijeni na dva uređaja.
 - DEMO i porodični dio su odvojeni. Prvi porodični ulazak ne šalje DEMO iznose u bazu.
 - JSON izvoz/uvoz podataka, uz validaciju i potvrdu zamjene. Originali nisu u JSON kopiji; mogu se preuzeti iz detalja.

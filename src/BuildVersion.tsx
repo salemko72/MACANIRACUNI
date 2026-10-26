@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AiConnection } from "./AiConnection";
 
 const build = __APP_BUILD__;
 const parts = Object.fromEntries(
@@ -17,7 +18,7 @@ const parts = Object.fromEntries(
 );
 const date = `${parts.day}.${parts.month}.${parts.year}. ${parts.hour}:${parts.minute}:${parts.second}`;
 
-export function BuildVersion() {
+export function BuildVersion({ email = "" }: { email?: string }) {
   const [newer, setNewer] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(false);
@@ -110,6 +111,7 @@ export function BuildVersion() {
       >
         Zadnja izmjena: {date}
       </time>
+      <AiConnection email={email} />
       {newer ? (
         <button
           type="button"
