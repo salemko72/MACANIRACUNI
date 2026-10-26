@@ -14,12 +14,13 @@ async function openScanner(
     existing?: boolean;
     lowConfidence?: boolean;
     demo?: boolean;
+    supplierOnly?: boolean;
   } = {},
 ) {
   await page.route("**/src/scanning/recognize.ts*", (route) =>
     route.fulfill({
       contentType: "application/javascript",
-      body: `export async function recognizeDocument(file, progress, signal) { progress(45,'Čitanje…'); ${options.slow ? "await new Promise(resolve => { window.finishRecognition = resolve; });" : ""} return { text:'Synthetic example', confidence:${options.lowConfidence ? 35 : 95}, templateId:'s-maintenance', amount:123.45, billingMonth:'2026-10', dueDate:'2026-11-10', warnings:[] }; }`,
+      body: `export async function recognizeDocument(file, progress, signal) { progress(45,'Čitanje…'); ${options.slow ? "await new Promise(resolve => { window.finishRecognition = resolve; });" : ""} return { text:'Synthetic example', confidence:${options.lowConfidence ? 35 : 95}, ${options.supplierOnly ? "supplierCategory:'maintenance'" : "templateId:'s-maintenance'"}, amount:123.45, billingMonth:'2026-10', dueDate:'2026-11-10', warnings:[] }; }`,
     }),
   );
   await page.route("**/__scanner-test", (route) =>
@@ -52,6 +53,25 @@ async function selectImage(page: Page) {
       buffer: Buffer.from("synthetic-file"),
     });
 }
+test("uses the selected property to suggest a recognized supplier without a customer address", async ({
+  page,
+}) => {
+  await openScanner(page, { supplierOnly: true });
+  await selectImage(page);
+  await expect(
+    page.getByRole("heading", { name: "Sarajevostan (održavanje zgrade)" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Potvrdi i sačuvaj" }),
+  ).toBeEnabled();
+});
+test("weak recognition is marked for review by default", async ({ page }) => {
+  await openScanner(page, { lowConfidence: true });
+  await selectImage(page);
+  await expect(
+    page.getByRole("checkbox", { name: "Ostavi oznaku „Za provjeru”" }),
+  ).toBeChecked();
+});
 test("rejects unsupported files before recognition", async ({ page }) => {
   await openScanner(page);
   await page

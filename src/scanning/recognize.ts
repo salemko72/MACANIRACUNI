@@ -1,5 +1,6 @@
 import { extractBill, type ScanSuggestion } from "./extraction";
 import type { Worker as OcrWorker } from "tesseract.js";
+import { chooseRecognition, shouldRetryRecognition } from "./quality";
 
 type Progress = (value: number, label: string) => void;
 const aborted = () =>
@@ -17,7 +18,11 @@ async function photoCanvas(file: File): Promise<HTMLCanvasElement> {
     imageOrientation: "from-image",
   });
   try {
-    const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(
+      1,
+      3200 / Math.max(bitmap.width, bitmap.height),
+      Math.sqrt(8_000_000 / (bitmap.width * bitmap.height)),
+    );
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bitmap.width * scale));
     canvas.height = Math.max(1, Math.round(bitmap.height * scale));
@@ -55,6 +60,7 @@ export async function recognizeDocument(
   let cancelRender: (() => void) | undefined;
   let canvas: HTMLCanvasElement | undefined;
   let stopped = false;
+  let retrying = false;
   let rejectAbort: (reason: unknown) => void = () => {};
   const abortPromise = new Promise<never>((_, reject) => {
     rejectAbort = reject;
@@ -86,10 +92,14 @@ export async function recognizeDocument(
       logger: (message) =>
         progress(
           message.status === "recognizing text"
-            ? 35 + message.progress * 60
+            ? retrying
+              ? 70 + message.progress * 25
+              : 35 + message.progress * 33
             : 15 + message.progress * 18,
           message.status === "recognizing text"
-            ? "Prepoznavanje teksta na uređaju…"
+            ? retrying
+              ? "Dodatno čitanje rasporeda računa…"
+              : "Prepoznavanje teksta na uređaju…"
             : "Učitavanje lokalnog OCR-a…",
         ),
       errorHandler: () => {},
@@ -105,11 +115,21 @@ export async function recognizeDocument(
     checkAbort(signal);
     await worker.setParameters({
       tessedit_pageseg_mode: PSM.AUTO,
-      user_defined_dpi: "150",
+      user_defined_dpi: "300",
     });
-    const { data } = await worker.recognize(image);
+    const { data } = await worker.recognize(image, { rotateAuto: true });
     checkAbort(signal);
-    return extractBill(data.text, data.confidence);
+    const first = extractBill(data.text, data.confidence);
+    if (!shouldRetryRecognition(first)) return first;
+    retrying = true;
+    progress(70, "Tražimo preostale podatke u kolonama računa…");
+    await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
+    const retry = await worker.recognize(image, { rotateAuto: true });
+    checkAbort(signal);
+    return chooseRecognition(
+      first,
+      extractBill(retry.data.text, retry.data.confidence),
+    );
   }
   const work = async (): Promise<ScanSuggestion> => {
     progress(2, "Priprema računa…");

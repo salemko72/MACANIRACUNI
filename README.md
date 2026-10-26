@@ -30,6 +30,8 @@ Build priprema OCR runtime iz instaliranih verzija i službenih, verzionisanih j
 - Ručno uređivanje, datum prijema i plaćanja, napomene, dug/preplata iz dokumenta.
 - Kamera ili fotografija JPEG/PNG/WebP; PDF tekst ili OCR prve stranice. Višestrani PDF je jasno označen; ostale stranice nisu automatski obrađene.
 - Lokalno prepoznavanje na bosanskom i engleskom: prijedlog dobavljača, nekretnine, obračunskog mjeseca, iznosa i roka. Nedovoljno pouzdana polja ostaju za provjeru. OCR procenat mjeri pouzdanost teksta, a ne garantovanu ispravnost podataka.
+- Fotografije zadržavaju do 3200 px / 8 megapiksela za sitni tekst; OCR ispravlja manji nagib. Nepotpuno čitanje automatski ponavlja drugim rasporedom teksta. Različiti rezultati ne spajaju se prešutno: proturječna polja ostaju za provjeru.
+- Podržani su višeredni datumi i iznosi s valutom u zaglavlju kolone. Prepoznati dobavljač može koristiti već odabrani objekat; adresa dobavljača i dalje nije dokaz lokacije potrošnje.
 - Pregled i korekcija prije spremanja; zaštita postojećih stvarnih unosa; prepoznavanje već priložene iste datoteke na uređaju.
 - Original u IndexedDB, pregled i preuzimanje kroz detalj. OCR obrada ne šalje račun serveru ni vanjskom AI servisu.
 - Porodična prijava jednokratnim email kodom za privatno dozvoljene adrese; server provjerava potpisani Cloudflare Access JWT i allowlist.

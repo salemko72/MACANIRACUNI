@@ -1,6 +1,37 @@
 import { describe, expect, it } from "vitest";
 import { extractBill } from "./extraction";
 
+describe("real invoice layouts", () => {
+  it.each([
+    "UKUPNO ZA UPLATU (KM)\n123,45",
+    "Ukupno za uplatu\n123,45 KM",
+    "Iznos za plaćanje: 123,45",
+  ])("reads a labeled total with separated currency: %s", (text) => {
+    expect(extractBill(text).amount).toBe(123.45);
+  });
+  it("reads multiline labels without colon", () => {
+    expect(
+      extractBill("Obračunski period\n09 / 2026\nRok plaćanja\n20. 10. 2026."),
+    ).toMatchObject({ billingMonth: "2026-09", dueDate: "2026-10-20" });
+  });
+  it("recognizes supplier independently of customer address", () => {
+    expect(extractBill("JP Elektroprivreda BiH Sarajevo")).toMatchObject({
+      supplierCategory: "electric",
+    });
+    expect(
+      extractBill("JP Elektroprivreda BiH Sarajevo").propertyId,
+    ).toBeUndefined();
+  });
+  it.each([
+    "Iznos za uplatu\nPrethodni dug: 900,00 KM",
+    "Za uplatu: 1234567890123456",
+    "Za uplatu: 20,00 EUR",
+    "Ukupno za uplatu: 10,00 20,00",
+  ])("keeps ambiguous or unrelated values empty: %s", (text) => {
+    expect(extractBill(text).amount).toBeUndefined();
+  });
+});
+
 describe("extractBill", () => {
   it("prefers total due over old debt and parses explicit billing period", () => {
     const result = extractBill(

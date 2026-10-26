@@ -7,6 +7,7 @@ export type ScanSuggestion = {
   issueDate?: string;
   templateId?: string;
   propertyId?: string;
+  supplierCategory?: string;
   warnings: string[];
 };
 
@@ -76,13 +77,17 @@ export function extractBill(text: string, confidence = 100): ScanSuggestion {
     warnings: [],
   };
   const lines = fold(text)
+    .replace(/(\d)\s*([./-])\s*(?=\d)/g, "$1$2")
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
   const unique = <T>(values: T[]) => [...new Set(values)];
   const context = (index: number) =>
     lines[index] +
-    (/[:]\s*$/.test(lines[index]) ? " " + (lines[index + 1] ?? "") : "");
+    (!/\d/.test(lines[index]) &&
+    /^(?:\d|sarajevo\b|nisici\b)/.test(lines[index + 1] ?? "")
+      ? " " + lines[index + 1]
+      : "");
   const labeledDates = (label: RegExp) =>
     unique(
       lines.flatMap((line, i) => (label.test(line) ? dates(context(i)) : [])),
@@ -143,9 +148,10 @@ export function extractBill(text: string, confidence = 100): ScanSuggestion {
       );
       return;
     }
-    // Currency is required to avoid mistaking account numbers, dates or invoice IDs for totals.
+    // Only decimal amounts after an explicit payable label qualify. Currency may
+    // be in the column header, rather than repeated beside the printed amount.
     for (const match of value.matchAll(
-      /(?:^|[^\d.,-])((?:\d{1,3}(?:[.\s]\d{3})+|\d+)[,.]\d{2})\s*(?:km|bam)\b/g,
+      /(?:^|[^\d.,-])((?:\d{1,3}(?:[.\s]\d{3})+|\d+)[,.]\d{2})(?![\d.,])/g,
     )) {
       const normalized = match[1].replace(/\s/g, "");
       const decimalIndex = Math.max(
@@ -213,6 +219,7 @@ export function extractBill(text: string, confidence = 100): ScanSuggestion {
       /sarajevostan/.test(supplierText) ? "maintenance" : "",
     ].filter(Boolean),
   );
+  if (suppliers.length === 1) result.supplierCategory = suppliers[0];
   if (suppliers.length === 1 && result.propertyId) {
     const category = suppliers[0];
     if (

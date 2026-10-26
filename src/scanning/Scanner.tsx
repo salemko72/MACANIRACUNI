@@ -144,7 +144,15 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
         abort.signal,
       );
       if (abort.signal.aborted) return;
-      const inferred = templates.find((t) => t.id === suggestion.templateId);
+      const inferred =
+        templates.find((t) => t.id === suggestion.templateId) ??
+        (property !== "all" && !suggestion.propertyId
+          ? templates.find(
+              (t) =>
+                t.propertyId === property &&
+                t.category === suggestion.supplierCategory,
+            )
+          : undefined);
       const location =
         inferred?.propertyId ??
         suggestion.propertyId ??
@@ -158,7 +166,7 @@ export function Scanner({ bills, month, property, onSave, onDone }: Props) {
         amount: suggestion.amount,
         dueDate: suggestion.dueDate,
         issueDate: suggestion.issueDate,
-        receiptStatus: "received",
+        receiptStatus: suggestion.confidence < 75 ? "needs_review" : "received",
         text: suggestion.text,
         confidence: suggestion.confidence,
       });
