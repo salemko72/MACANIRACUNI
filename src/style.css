@@ -166,13 +166,23 @@ header {
 }
 .build-version {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  font-size: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
   line-height: 1.3;
-  color: #77647c;
+  color: #48216d;
   font-variant-numeric: tabular-nums;
+  padding: 6px 9px;
+  margin-bottom: 10px;
+  background: #eee1f2;
+  border: 1px solid #48216d18;
+  border-radius: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 .build-version time {
   white-space: nowrap;
@@ -188,7 +198,7 @@ header {
 }
 @media (max-width: 640px) {
   .build-version {
-    font-size: 9px;
+    font-size: 11px;
   }
   .header-version .demo {
     padding: 4px 8px;

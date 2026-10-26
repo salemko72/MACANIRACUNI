@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 
 const build = __APP_BUILD__;
-const date = new Intl.DateTimeFormat("bs-BA", {
-  timeZone: "Europe/Sarajevo",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-}).format(new Date(build.builtAt));
+const parts = Object.fromEntries(
+  new Intl.DateTimeFormat("bs-BA", {
+    timeZone: "Europe/Sarajevo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .formatToParts(new Date(build.builtAt))
+    .map((part) => [part.type, part.value]),
+);
+const date = `${parts.day}.${parts.month}.${parts.year}. ${parts.hour}:${parts.minute}:${parts.second}`;
 
 export function BuildVersion() {
   const [newer, setNewer] = useState(false);
@@ -103,7 +108,7 @@ export function BuildVersion() {
         dateTime={build.builtAt}
         title={"Učitana verzija · Sarajevo · " + build.id}
       >
-        Verzija: {date}
+        Zadnja izmjena: {date}
       </time>
       {newer ? (
         <button

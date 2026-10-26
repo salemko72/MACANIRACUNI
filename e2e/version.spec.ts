@@ -3,7 +3,9 @@ import { test, expect } from "@playwright/test";
 test("loaded build date remains visible across screens", async ({ page }) => {
   await page.goto("/#month");
   const label = page.getByLabel("Učitana verzija aplikacije");
-  await expect(label).toContainText(/Verzija:.*\d{2}:\d{2}/);
+  await expect(label).toContainText(
+    /Zadnja izmjena: \d{2}\.\d{2}\.\d{4}\. \d{2}:\d{2}:\d{2}/,
+  );
   const loaded = await label.textContent();
   await page.goto("/#scan");
   await expect(label).toHaveText(loaded!);

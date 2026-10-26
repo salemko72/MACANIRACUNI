@@ -176,6 +176,7 @@ function App() {
         </div>
       </aside>
       <main className={route === "month" ? "month-page" : undefined}>
+        <BuildVersion />
         <header>
           <span className="mobile-brand">MacaniRacuni</span>
           <span className="eyebrow desktop-label">
@@ -192,7 +193,6 @@ function App() {
                     : "LOKALNI UNOSI"
                   : "DEMO PODACI"}
             </span>
-            <BuildVersion />
           </div>
         </header>
         {warning && (
