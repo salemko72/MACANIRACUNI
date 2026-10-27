@@ -106,19 +106,21 @@ nav button.active {
 nav button:hover:not(.active) {
   background: #e9dce6;
 }
-nav button.account-nav {
-  position: fixed;
-  right: 24px;
-  bottom: 20px;
-  z-index: 30;
-  background: #fff9fc;
-  border: 1px solid #48216d25;
-  box-shadow: 0 4px 18px #48216d15;
-  color: #48216d;
-}
 nav button.account-nav:disabled {
   opacity: 0.55;
   cursor: wait;
+}
+@media (min-width: 641px) and (max-height: 600px) {
+  aside {
+    overflow-y: auto;
+  }
+  .sidebar-note,
+  .aside-bottom {
+    display: none;
+  }
+  nav {
+    margin-top: 20px;
+  }
 }
 @media (max-width: 640px) {
   nav {
@@ -128,12 +130,6 @@ nav button.account-nav:disabled {
     min-width: 0;
     flex: 1;
     padding: 8px 4px;
-  }
-  nav button.account-nav {
-    position: static;
-    border: 0;
-    box-shadow: none;
-    background: transparent;
   }
 }
 .aside-bottom {
